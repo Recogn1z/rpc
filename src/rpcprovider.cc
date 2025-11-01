@@ -1,8 +1,9 @@
 #include "rpcprovider.h"
 #include "rpcapplication.h"
-//#include "rpcheader.pb.h"
-//#include "rpcLogger.h"
+#include "rpcheader.pb.h"
+#include "rpcLogger.h"
 #include <iostream>
+
 
 void rpcProvider::NotifyService(google::protobuf::Service* service) {
     ServiceInfo service_info;
@@ -50,7 +51,7 @@ void rpcProvider::Run() {
             std::string method_path = service_path + "/" + mp.first;
             char method_path_data[128] = {0};
             sprintf(method_path_data, "%s:%d", ip.c_str(), port);
-            zkclient.Create(method_path.c_str, method_path_data, strlen(method_path_data), ZOO_EPHEMERAL);
+            zkclient.Create(method_path.c_str(), method_path_data, strlen(method_path_data), ZOO_EPHEMERAL);
         }
     }
     
@@ -83,8 +84,8 @@ void rpcProvider::OnMessage(const muduo::net::TcpConnectionPtr& conn, muduo::net
     uint32_t args_size{};
 
     google::protobuf::io::CodedInputStream::Limit msg_limit = coded_input.PushLimit(header_size);
-    code_input.ReadString(&rpc_header_str, header_size);
-    code_input.PopLimit(msg_limit);
+    coded_input.ReadString(&rpc_header_str, header_size);
+    coded_input.PopLimit(msg_limit);
     
     if(rpcHeader.ParseFromString(rpc_header_str)) {
         service_name = rpcHeader.service_name();
@@ -103,13 +104,13 @@ void rpcProvider::OnMessage(const muduo::net::TcpConnectionPtr& conn, muduo::net
         return;
     }
 
-    auto it = service_map.find(service_map);
+    auto it = service_map.find(service_name);
     if(it == service_map.end()) {
         std::cout<< service_name << "is not exist!" << std::endl;
         return;
     }
     auto mit = it->second.method_map.find(method_name);
-    if(mit == it->second.methond_map.end()) {
+    if(mit == it->second.method_map.end()) {
         std::cout<< service_name << "." << method_name << "is not exist" << std::endl;
         return;
     }
